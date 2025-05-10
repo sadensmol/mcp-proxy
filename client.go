@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -285,36 +286,27 @@ type Server struct {
 	sseServer *server.SSEServer
 }
 
+func contextFunc(ctx context.Context, r *http.Request) context.Context {
+	println("ContextFunc!!!")
+	println(ctx)
+	userAuth := r.Header.Get("Authorization")
+	ctx = context.WithValue(ctx, "userAuth", userAuth)
+	return ctx
+}
+
 func newMCPServer(name, version, baseURL string, clientConfig *MCPClientConfigV2) *Server {
 
 	hooks := &server.Hooks{}
 
-	hooks.AddBeforeAny(func(ctx context.Context, id any, method mcp.MCPMethod, message any) {
-		fmt.Printf("beforeAny: %s, %v, %v\n", method, id, message)
-	})
-	hooks.AddOnSuccess(func(ctx context.Context, id any, method mcp.MCPMethod, message any, result any) {
-		fmt.Printf("onSuccess: %s, %v, %v, %v\n", method, id, message, result)
-	})
-	hooks.AddOnError(func(ctx context.Context, id any, method mcp.MCPMethod, message any, err error) {
-		fmt.Printf("onError: %s, %v, %v, %v\n", method, id, message, err)
-	})
-	hooks.AddBeforeInitialize(func(ctx context.Context, id any, message *mcp.InitializeRequest) {
-		fmt.Printf("beforeInitialize: %v, %v\n", id, message)
-	})
-	hooks.AddOnRequestInitialization(func(ctx context.Context, id any, message any) error {
-		fmt.Printf("AddOnRequestInitialization: %v, %v\n", id, message)
-		// authorization verification and other preprocessing tasks are performed.
-		return nil
-	})
-	hooks.AddAfterInitialize(func(ctx context.Context, id any, message *mcp.InitializeRequest, result *mcp.InitializeResult) {
-		fmt.Printf("afterInitialize: %v, %v, %v\n", id, message, result)
-	})
 	hooks.AddAfterCallTool(func(ctx context.Context, id any, message *mcp.CallToolRequest, result *mcp.CallToolResult) {
-		fmt.Printf("afterCallTool: %v, %v, %v\n", id, message, result)
+		userAuth := ctx.Value("userAuth")
+		fmt.Printf("afterCallTool: %v, %v, %v %s\n", id, message, result, userAuth)
 	})
 	hooks.AddBeforeCallTool(func(ctx context.Context, id any, message *mcp.CallToolRequest) {
-		fmt.Printf("beforeCallTool: %v, %v\n", id, message)
+		userAuth := ctx.Value("userAuth")
+		fmt.Printf("beforeCallTool: %v, %v %s\n", id, message, userAuth)
 	})
+
 	serverOpts := []server.ServerOption{
 		server.WithResourceCapabilities(true, true),
 		server.WithRecovery(),
@@ -332,6 +324,7 @@ func newMCPServer(name, version, baseURL string, clientConfig *MCPClientConfigV2
 	sseServer := server.NewSSEServer(mcpServer,
 		server.WithStaticBasePath(name),
 		server.WithBaseURL(baseURL),
+		server.WithSSEContextFunc(contextFunc),
 	)
 
 	srv := &Server{

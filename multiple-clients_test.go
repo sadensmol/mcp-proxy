@@ -27,7 +27,7 @@ func TestServerWithConfigFile(t *testing.T) {
 
 	time.Sleep(2 * time.Second) // Give the server a moment to start up
 
-	println("starting 2 clients ...")
+	println("-------------------------------------------------- starting 2 clients -----------------------------------------")
 	in, out, err := runClient(ctx, "client1")
 	if err != nil {
 		t.Fatalf("Failed to run client: %v", err)
@@ -37,6 +37,7 @@ func TestServerWithConfigFile(t *testing.T) {
 		t.Fatalf("Failed to run client: %v", err)
 	}
 
+	println("-------------------------------------------------- sending queries -----------------------------------------")
 	in <- "what is the week day today?"
 	fmt.Printf("client 1 response: %s\n", <-out)
 	time.Sleep(3 * time.Second)
