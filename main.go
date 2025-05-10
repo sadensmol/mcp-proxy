@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -21,9 +22,11 @@ func main() {
 		fmt.Println(BuildVersion)
 		return
 	}
-	config, err := load(*conf)
+	config, err := LoadConfig(*conf)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
-	startHTTPServer(config)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	startHTTPServer(ctx, config)
 }

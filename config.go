@@ -160,7 +160,7 @@ type Config struct {
 	McpServers map[string]*MCPClientConfigV2 `json:"mcpServers"`
 }
 
-func load(path string) (*Config, error) {
+func LoadConfig(path string) (*Config, error) {
 	type FullConfig struct {
 		DeprecatedServerV1  *MCPProxyConfigV1             `json:"server"`
 		DeprecatedClientsV1 map[string]*MCPClientConfigV1 `json:"clients"`

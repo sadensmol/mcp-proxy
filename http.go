@@ -72,10 +72,7 @@ func recoverMiddleware(prefix string) MiddlewareFunc {
 	}
 }
 
-func startHTTPServer(config *Config) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func startHTTPServer(ctx context.Context, config *Config) {
 	var errorGroup errgroup.Group
 	httpMux := http.NewServeMux()
 	httpServer := &http.Server{

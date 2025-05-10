@@ -286,9 +286,39 @@ type Server struct {
 }
 
 func newMCPServer(name, version, baseURL string, clientConfig *MCPClientConfigV2) *Server {
+
+	hooks := &server.Hooks{}
+
+	hooks.AddBeforeAny(func(ctx context.Context, id any, method mcp.MCPMethod, message any) {
+		fmt.Printf("beforeAny: %s, %v, %v\n", method, id, message)
+	})
+	hooks.AddOnSuccess(func(ctx context.Context, id any, method mcp.MCPMethod, message any, result any) {
+		fmt.Printf("onSuccess: %s, %v, %v, %v\n", method, id, message, result)
+	})
+	hooks.AddOnError(func(ctx context.Context, id any, method mcp.MCPMethod, message any, err error) {
+		fmt.Printf("onError: %s, %v, %v, %v\n", method, id, message, err)
+	})
+	hooks.AddBeforeInitialize(func(ctx context.Context, id any, message *mcp.InitializeRequest) {
+		fmt.Printf("beforeInitialize: %v, %v\n", id, message)
+	})
+	hooks.AddOnRequestInitialization(func(ctx context.Context, id any, message any) error {
+		fmt.Printf("AddOnRequestInitialization: %v, %v\n", id, message)
+		// authorization verification and other preprocessing tasks are performed.
+		return nil
+	})
+	hooks.AddAfterInitialize(func(ctx context.Context, id any, message *mcp.InitializeRequest, result *mcp.InitializeResult) {
+		fmt.Printf("afterInitialize: %v, %v, %v\n", id, message, result)
+	})
+	hooks.AddAfterCallTool(func(ctx context.Context, id any, message *mcp.CallToolRequest, result *mcp.CallToolResult) {
+		fmt.Printf("afterCallTool: %v, %v, %v\n", id, message, result)
+	})
+	hooks.AddBeforeCallTool(func(ctx context.Context, id any, message *mcp.CallToolRequest) {
+		fmt.Printf("beforeCallTool: %v, %v\n", id, message)
+	})
 	serverOpts := []server.ServerOption{
 		server.WithResourceCapabilities(true, true),
 		server.WithRecovery(),
+		server.WithHooks(hooks),
 	}
 
 	if clientConfig.Options.LogEnabled.OrElse(false) {
